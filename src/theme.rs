@@ -16,6 +16,10 @@ pub fn control_background() -> Rgba {
     rgb(0x3a3a3a)
 }
 
+pub fn control_background_hover() -> Rgba {
+    rgb(0x4a4a4a)
+}
+
 pub fn accent() -> Rgba {
     rgb(0x4f9cf9)
 }

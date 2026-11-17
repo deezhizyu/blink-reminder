@@ -1,12 +1,13 @@
-use std::{fs, io, path::PathBuf};
+use std::{fs, io, path::PathBuf, time::Duration};
 
-use gpui::{App, BorrowAppContext as _, Global};
+use gpui::{App, Global, Task};
 use serde::{Deserialize, Serialize};
 
 use crate::diagnostics::report_error;
 
 const APPLICATION_DIRECTORY_NAME: &str = "blink-reminder";
 const SETTINGS_FILE_NAME: &str = "settings.toml";
+const SAVE_DEBOUNCE: Duration = Duration::from_millis(400);
 
 pub const INTERVAL_MINUTES_RANGE: (f32, f32) = (1.0, 120.0);
 pub const DISPLAY_SECONDS_RANGE: (f32, f32) = (1.0, 30.0);
@@ -25,6 +26,12 @@ pub struct Settings {
 }
 
 impl Global for Settings {}
+
+struct PendingSave {
+    _task: Task<()>,
+}
+
+impl Global for PendingSave {}
 
 impl Default for Settings {
     fn default() -> Self {
@@ -71,11 +78,38 @@ impl Settings {
 }
 
 pub fn update(cx: &mut App, change: impl FnOnce(&mut Settings)) {
-    cx.update_global(|settings: &mut Settings, _| {
-        change(settings);
-        *settings = settings.clone().clamped();
+    let mut updated = cx.global::<Settings>().clone();
+    change(&mut updated);
+    let updated = updated.clamped();
+    if updated == *cx.global::<Settings>() {
+        return;
+    }
+    cx.set_global(updated);
+    schedule_save(cx);
+}
+
+pub fn save_on_quit(cx: &mut App) {
+    cx.on_app_quit(|cx| {
+        let settings = cx.global::<Settings>().clone();
+        async move { save_and_report(&settings) }
+    })
+    .detach();
+}
+
+fn schedule_save(cx: &mut App) {
+    let task = cx.spawn(async move |cx| {
+        cx.background_executor().timer(SAVE_DEBOUNCE).await;
+        if let Ok(settings) = cx.read_global(|settings: &Settings, _| settings.clone()) {
+            cx.background_executor()
+                .spawn(async move { save_and_report(&settings) })
+                .await;
+        }
     });
-    if let Err(error) = cx.global::<Settings>().save() {
+    cx.set_global(PendingSave { _task: task });
+}
+
+fn save_and_report(settings: &Settings) {
+    if let Err(error) = settings.save() {
         report_error("failed to save settings", &error);
     }
 }

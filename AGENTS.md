@@ -34,7 +34,7 @@ Blink Reminder is a Windows tray app written in Rust. It reminds the user to bli
 - Overlay look: black rounded background, an animated blinking-eye icon on the left, and the text "Blink slowly and fully — rest your eyes" on the right. The whole overlay is shown at 25% opacity by default.
 - The overlay fades in and out smoothly over 200 ms.
 - The overlay appears on the display that has the mouse cursor.
-- The Settings window is dark-themed and simple. Settings apply live and are saved on every change.
+- The Settings window is dark-themed and simple. Settings apply live. Changes are saved to disk after a short pause (debounced) and on quit. A **Test reminder** button shows the overlay without touching the timers.
 
 Settings:
 

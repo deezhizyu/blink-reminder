@@ -55,7 +55,7 @@ src/platform.rs        Win32 only: make HWND click-through (WS_EX_LAYERED|WS_EX_
 - **Tray:** "Settings" opens or focuses the settings window. "Quit" calls `cx.quit()`. The app stays alive with no windows open.
 
 ## Skipped (not asked; can add later)
-Launch at login, single-instance guard, "show now" preview button, macOS/Linux support.
+Launch at login, single-instance guard, macOS/Linux support.
 
 ## Risks to check first
 - Read gpui 0.2.2's Windows window code. Confirm that `PopUp` + `focus: false` does not activate the window and stays topmost, that the app does not quit when its last window closes, and that `Window: HasWindowHandle` holds.
@@ -73,3 +73,5 @@ Launch at login, single-instance guard, "show now" preview button, macOS/Linux s
 - `platform::cursor_display_index` returns the index of the monitor under the cursor. gpui numbers its displays in `EnumDisplayMonitors` order, so the same index selects the gpui display.
 - Pure logic lives in `animation.rs`, `placement.rs` and `settings.rs`, with unit tests. Those tests were run against a stub of gpui's geometry types in a Linux container. The full test suite runs in CI on Windows.
 - Not verified on real Windows yet: no focus steal, true click-through, and topmost behaviour of the overlay with gpui's DirectComposition window.
+- The settings window has a **Test reminder** button. It calls `overlay::show`, which does not touch the scheduler, and it closes any overlay that is already open first.
+- Dragging sliders and the position picker updates settings in memory at once and saves to disk 400 ms after the last change (and on quit), so the UI thread never waits on file writes. `pointer_surface` registers window-level mouse listeners while dragging, so the drag keeps tracking when the pointer leaves the control.

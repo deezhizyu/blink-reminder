@@ -76,7 +76,19 @@ pub fn show(cx: &mut App) {
     }
 }
 
+fn close_open_overlays(cx: &mut App) {
+    let open_overlays: Vec<_> = cx
+        .windows()
+        .into_iter()
+        .filter_map(|window| window.downcast::<Overlay>())
+        .collect();
+    for overlay in open_overlays {
+        let _ = overlay.update(cx, |_, window, _| window.remove_window());
+    }
+}
+
 fn open_window(cx: &mut App) -> Result<()> {
+    close_open_overlays(cx);
     let settings = cx.global::<Settings>().clone();
     let display_duration = Duration::from_secs_f32(settings.display_seconds);
     let fade_duration = if settings.animations_enabled {

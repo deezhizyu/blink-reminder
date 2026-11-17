@@ -41,6 +41,7 @@ fn main() {
         .with_assets(EmbeddedAssets)
         .run(|cx: &mut App| {
             cx.set_global(Settings::load());
+            settings::save_on_quit(cx);
             keep_application_alive(cx);
             if let Err(error) = tray::install(cx) {
                 report_error("failed to create the tray icon", &error);

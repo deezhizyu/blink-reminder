@@ -4,13 +4,14 @@ use gpui::{
 };
 
 use crate::{
-    components::{position_picker::PositionPicker, slider::Slider, toggle::Toggle},
+    components::{button::Button, position_picker::PositionPicker, slider::Slider, toggle::Toggle},
     diagnostics::report_error,
+    overlay,
     settings::{self, DISPLAY_SECONDS_RANGE, INTERVAL_MINUTES_RANGE, OPACITY_RANGE, Settings},
     theme,
 };
 
-const WINDOW_SIZE: Size<gpui::Pixels> = size(px(340.0), px(560.0));
+const WINDOW_SIZE: Size<gpui::Pixels> = size(px(340.0), px(620.0));
 const FALLBACK_DISPLAY_SIZE: Size<gpui::Pixels> = size(px(1920.0), px(1080.0));
 
 struct SettingsWindow;
@@ -82,6 +83,7 @@ impl Render for SettingsWindow {
                     settings::update(cx, |settings| settings.animations_enabled = enabled)
                 },
             ))
+            .child(Button::new("test-reminder", "Test reminder", overlay::show))
     }
 }
 
@@ -117,5 +119,10 @@ fn open_new(cx: &mut App) -> anyhow::Result<WindowHandle<SettingsWindow>> {
         is_minimizable: false,
         ..Default::default()
     };
-    cx.open_window(options, |_, cx| cx.new(|_| SettingsWindow))
+    cx.open_window(options, |_, cx| {
+        cx.new(|cx| {
+            cx.observe_global::<Settings>(|_, cx| cx.notify()).detach();
+            SettingsWindow
+        })
+    })
 }
