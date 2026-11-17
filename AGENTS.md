@@ -17,6 +17,14 @@ Checklist:
 
 Prefer, in order: the standard library, a crate already in the tree, a new vetted crate. Pin versions through `Cargo.lock`, which is committed. Record any new dependency and the reason for it in the dependency table below.
 
+## GitHub Actions
+
+The same rule applies to third-party actions. Pin each one to a full commit SHA with the version in a trailing comment, and vet it before use. `actions/checkout` is official. Vetted third-party actions:
+
+| Action | Pinned | Vetting |
+|---|---|---|
+| `Swatinem/rust-cache` | `d1527c8f67ef9af357290475d4af4b0fab8f12e0` (v2.9.3) | Single long-time maintainer, 100+ commits, runs on `node24` from a committed `dist/`. Source and `dist/` inspected for network calls and process execution: only the GitHub cache service and opt-in cache backends, and `sudo purge` on macOS. `dist/` was not rebuilt and diffed against `src/`. |
+
 ## Project
 
 Blink Reminder is a Windows tray app written in Rust. It reminds the user to blink more often and fully, once per configurable interval (default 20 minutes).
