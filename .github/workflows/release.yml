@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Check the tag matches the crate version
+        shell: bash
+        run: |
+          crate_version=$(cargo metadata --no-deps --format-version 1 | python -c "import json,sys; print(json.load(sys.stdin)['packages'][0]['version'])")
+          if [ "v$crate_version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match Cargo.toml version $crate_version"
+            exit 1
+          fi
+      - run: cargo test --release
+      - run: cargo build --release
+      - name: Package
+        shell: pwsh
+        run: |
+          Copy-Item target/release/blink-reminder.exe blink-reminder-windows-x64.exe
+          (Get-FileHash blink-reminder-windows-x64.exe -Algorithm SHA256).Hash.ToLower() + "  blink-reminder-windows-x64.exe" | Out-File -Encoding ascii blink-reminder-windows-x64.exe.sha256
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" blink-reminder-windows-x64.exe blink-reminder-windows-x64.exe.sha256 --title "$GITHUB_REF_NAME" --generate-notes

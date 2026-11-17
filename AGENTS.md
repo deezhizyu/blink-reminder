@@ -80,4 +80,5 @@ The app targets Windows only. In a Linux container, install `gcc-mingw-w64-x86-6
 - Follow `CODE_STYLE.md` for all code and commit messages.
 - Search the codebase for an existing implementation before writing a new feature or helper.
 - Keep `PLAN.md` and this file correct when the design or the dependencies change.
+- Release: bump `version` in `Cargo.toml`, then push a tag `vX.Y.Z` that matches it. `.github/workflows/release.yml` builds and publishes the GitHub release.
 - Develop on the branch given for the session. Do not push to other branches, and do not open a pull request unless asked.
