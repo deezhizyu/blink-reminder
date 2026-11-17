@@ -51,6 +51,8 @@ See `PLAN.md` for the design and the build order.
 | `gpui` | Windows, rendering, animation, timers |
 | `tray-icon` | Tray icon and menu |
 | `serde`, `toml` | Settings file |
+| `anyhow` | Error handling (`Result` with context) |
+| `futures` | Channel that carries tray menu events into the gpui executor |
 | `windows` | Win32 calls: click-through styles, display under the cursor |
 | `raw-window-handle` | Window handle from the gpui window |
 | `winresource` (build) | Embeds the executable icon |
@@ -71,7 +73,7 @@ cargo fmt --check
 cargo audit
 ```
 
-The app targets Windows. In a Linux container, check it with `cargo check --target x86_64-pc-windows-gnu` and run the pure-logic tests with `cargo test`. The real build check is the GitHub Actions workflow on `windows-latest`.
+The app targets Windows only. In a Linux container, install `gcc-mingw-w64-x86-64`, add the target (`rustup target add x86_64-pc-windows-gnu`), and check with `cargo clippy --target x86_64-pc-windows-gnu --all-targets -- -D warnings`. Tests cannot run there (the test binary needs Windows system DLLs that Wine lacks), so `cargo test` runs in the GitHub Actions workflow on `windows-latest`.
 
 ## Workflow
 

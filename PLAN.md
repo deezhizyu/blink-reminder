@@ -20,8 +20,10 @@ The repo `deezhizyu/blink-reminder` is empty. The user wants a Windows tray app 
 | `gpui` | Windows, rendering, animation, timers |
 | `tray-icon` (tauri-apps, 45M downloads) | Tray icon and menu. gpui has no tray. It works on gpui's Win32 message loop. |
 | `serde` + `toml` | The settings file |
-| `windows` (Microsoft) | Click-through window styles and finding the cursor's monitor. Use the same major version as gpui to avoid a duplicate. |
+| `windows` 0.61 (Microsoft) | Click-through window styles and finding the cursor's monitor. 0.61 is the version gpui uses, so there is no duplicate. |
 | `raw-window-handle` | Gets the HWND from the gpui `Window`. Same version as gpui. |
+| `anyhow` | Error handling |
+| `futures` | Channel from the tray menu handler into the gpui executor |
 | `winresource` (build-dep) | Embeds `icon.ico` as the exe icon. The tray uses it too, through `Icon::from_resource`. |
 
 The config path comes from the std `APPDATA` env var, so no `dirs` crate is needed.
@@ -64,3 +66,10 @@ Launch at login, single-instance guard, "show now" preview button, macOS/Linux s
 - Add a small GitHub Actions workflow on `windows-latest` that runs `cargo clippy -- -D warnings` and `cargo test`. It is the real Windows build check.
 - Manual on Windows (user): the tray icon shows with both menu items. Set the interval to 1 min and confirm that the overlay fades in and out, does not steal focus while you type, passes clicks through, and shows on the monitor with the cursor. Each setting should apply live and persist after a restart.
 - Commit and push to `claude/clever-sagan-s74l3p`.
+
+## Implementation notes
+- gpui on Windows quits the app when its last window closes. `main.rs` opens one invisible window (`show: false`) so the tray app keeps running after the overlay or settings window closes.
+- The overlay opens with `show: true`, `focus: false`, `kind: PopUp`. `platform::make_click_through` then adds `WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` and moves the window to `HWND_TOPMOST` without activating it.
+- `platform::cursor_display_index` returns the index of the monitor under the cursor. gpui numbers its displays in `EnumDisplayMonitors` order, so the same index selects the gpui display.
+- Pure logic lives in `animation.rs`, `placement.rs` and `settings.rs`, with unit tests. Those tests were run against a stub of gpui's geometry types in a Linux container. The full test suite runs in CI on Windows.
+- Not verified on real Windows yet: no focus steal, true click-through, and topmost behaviour of the overlay with gpui's DirectComposition window.
