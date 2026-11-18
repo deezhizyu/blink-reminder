@@ -1,6 +1,6 @@
 use gpui::{
     App, IntoElement, ParentElement as _, Pixels, RenderOnce, Size, Styled as _, Window, black,
-    div, px, size,
+    div, size,
 };
 
 use crate::{
@@ -9,11 +9,11 @@ use crate::{
     theme,
 };
 
-const PICKER_WIDTH: f32 = 280.0;
 const OVERLAY_PREVIEW_OPACITY: f32 = 0.8;
 
 #[derive(IntoElement)]
 pub struct PositionPicker {
+    width: Pixels,
     display_size: Size<Pixels>,
     center: (f32, f32),
     on_change: ChangeHandler<(f32, f32)>,
@@ -21,11 +21,13 @@ pub struct PositionPicker {
 
 impl PositionPicker {
     pub fn new(
+        width: Pixels,
         display_size: Size<Pixels>,
         center: (f32, f32),
         on_change: impl Fn((f32, f32), &mut App) + 'static,
     ) -> Self {
         Self {
+            width,
             display_size,
             center,
             on_change: Box::new(on_change),
@@ -36,8 +38,8 @@ impl PositionPicker {
 impl RenderOnce for PositionPicker {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let picker_size = Size {
-            width: px(PICKER_WIDTH),
-            height: px(PICKER_WIDTH) * (self.display_size.height / self.display_size.width),
+            width: self.width,
+            height: self.width * (self.display_size.height / self.display_size.width),
         };
         let preview_scale = picker_size.width / self.display_size.width;
         let preview_size = size(

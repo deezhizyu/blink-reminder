@@ -1,5 +1,5 @@
 use gpui::{
-    App, Bounds, Context, IntoElement, Render, Size, TitlebarOptions, Window, WindowBounds,
+    App, Bounds, Context, IntoElement, Pixels, Render, Size, TitlebarOptions, Window, WindowBounds,
     WindowHandle, WindowOptions, div, prelude::*, px, size,
 };
 
@@ -14,8 +14,11 @@ use crate::{
     theme,
 };
 
-const WINDOW_SIZE: Size<gpui::Pixels> = size(px(340.0), px(700.0));
-const FALLBACK_DISPLAY_SIZE: Size<gpui::Pixels> = size(px(1920.0), px(1080.0));
+const WINDOW_WIDTH: f32 = 340.0;
+const WINDOW_PADDING: f32 = 24.0;
+const CONTENT_WIDTH: f32 = WINDOW_WIDTH - 2.0 * WINDOW_PADDING;
+const INITIAL_WINDOW_HEIGHT: f32 = 690.0;
+const FALLBACK_DISPLAY_SIZE: Size<Pixels> = size(px(1920.0), px(1080.0));
 
 struct SettingsWindow;
 
@@ -26,11 +29,9 @@ impl Render for SettingsWindow {
             .primary_display()
             .map_or(FALLBACK_DISPLAY_SIZE, |display| display.bounds().size);
 
-        div()
-            .size_full()
-            .bg(theme::window_background())
-            .text_color(theme::text())
-            .p_6()
+        let content = div()
+            .w_full()
+            .p(px(WINDOW_PADDING))
             .flex()
             .flex_col()
             .gap_5()
@@ -41,6 +42,7 @@ impl Render for SettingsWindow {
                     .gap_2()
                     .child("Position on screen")
                     .child(PositionPicker::new(
+                        px(CONTENT_WIDTH),
                         display_size,
                         (current.position_x, current.position_y),
                         |(position_x, position_y), cx| {
@@ -102,7 +104,25 @@ impl Render for SettingsWindow {
                     settings::update(cx, |settings| settings.animations_enabled = enabled)
                 },
             ))
-            .child(Button::new("test-reminder", "Test reminder", overlay::show))
+            .child(Button::new("test-reminder", "Test reminder", overlay::show));
+
+        div()
+            .size_full()
+            .bg(theme::window_background())
+            .text_color(theme::text())
+            .on_children_prepainted(fit_window_to_content)
+            .child(content)
+    }
+}
+
+// The content height depends on the display aspect ratio and the font, so the window is sized after layout.
+fn fit_window_to_content(children: Vec<Bounds<Pixels>>, window: &mut Window, _cx: &mut App) {
+    let Some(content) = children.first() else {
+        return;
+    };
+    let viewport = window.viewport_size();
+    if (content.size.height - viewport.height).abs() >= px(1.0) {
+        window.resize(size(viewport.width, content.size.height));
     }
 }
 
@@ -127,7 +147,7 @@ fn open_new(cx: &mut App) -> anyhow::Result<WindowHandle<SettingsWindow>> {
     let options = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
             None,
-            WINDOW_SIZE,
+            size(px(WINDOW_WIDTH), px(INITIAL_WINDOW_HEIGHT)),
             cx,
         ))),
         titlebar: Some(TitlebarOptions {
