@@ -9,6 +9,8 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/deezhizyu/blink-reminder/releases/latest"><img src="https://img.shields.io/github/v/release/deezhizyu/blink-reminder" alt="Latest release"></a>
+  <a href="https://github.com/deezhizyu/blink-reminder/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/deezhizyu/blink-reminder/ci.yml?branch=main&label=CI" alt="CI status"></a>
   <img src="https://img.shields.io/badge/platform-Windows-0078d4" alt="Platform: Windows">
   <img src="https://img.shields.io/badge/made%20with-Rust-dea584" alt="Made with Rust">
 </p>
