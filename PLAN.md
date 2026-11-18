@@ -41,6 +41,7 @@ src/settings_window.rs Dark settings view; opens the window or focuses the open 
 src/components.rs                  pub mod slider; pub mod toggle; pub mod position_picker;
 src/components/slider.rs           One reusable slider (interval, duration, opacity)
 src/components/toggle.rs           Animations on/off
+src/components/number_input.rs     Click-to-edit numeric text field (position X/Y in percent)
 src/components/position_picker.rs  Light-gray screen-ratio box with a draggable overlay rect
 src/tray.rs            Tray icon, menu "Settings" / "Quit"; MenuEvent handler -> channel -> gpui task
 src/platform.rs        Win32 only: make HWND click-through (WS_EX_LAYERED|WS_EX_TRANSPARENT|WS_EX_NOACTIVATE|WS_EX_TOOLWINDOW), display under the cursor (GetCursorPos/MonitorFromPoint mapped to the gpui display)
@@ -75,3 +76,5 @@ Launch at login, single-instance guard, macOS/Linux support.
 - Not verified on real Windows yet: no focus steal, true click-through, and topmost behaviour of the overlay with gpui's DirectComposition window.
 - The settings window has a **Test reminder** button. It calls `overlay::show`, which does not touch the scheduler, and it closes any overlay that is already open first.
 - Dragging sliders and the position picker updates settings in memory at once and saves to disk 400 ms after the last change (and on quit), so the UI thread never waits on file writes. `pointer_surface` registers window-level mouse listeners while dragging, so the drag keeps tracking when the pointer leaves the control.
+- gpui creates pop-ups as plain overlapped windows, so DWM draws a border and a square shadow. `platform::make_click_through` also disables DWM non-client rendering and, on Windows 11, removes the border color and corner rounding.
+- The settings window shows editable Horizontal and Vertical percent fields under the position picker (`NumberInput`). Typed values apply live and are clamped by `Settings::clamped`.

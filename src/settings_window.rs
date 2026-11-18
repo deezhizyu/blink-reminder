@@ -4,14 +4,17 @@ use gpui::{
 };
 
 use crate::{
-    components::{button::Button, position_picker::PositionPicker, slider::Slider, toggle::Toggle},
+    components::{
+        button::Button, number_input::NumberInput, position_picker::PositionPicker, slider::Slider,
+        toggle::Toggle,
+    },
     diagnostics::report_error,
     overlay,
     settings::{self, DISPLAY_SECONDS_RANGE, INTERVAL_MINUTES_RANGE, OPACITY_RANGE, Settings},
     theme,
 };
 
-const WINDOW_SIZE: Size<gpui::Pixels> = size(px(340.0), px(620.0));
+const WINDOW_SIZE: Size<gpui::Pixels> = size(px(340.0), px(700.0));
 const FALLBACK_DISPLAY_SIZE: Size<gpui::Pixels> = size(px(1920.0), px(1080.0));
 
 struct SettingsWindow;
@@ -45,6 +48,22 @@ impl Render for SettingsWindow {
                                 settings.position_x = position_x;
                                 settings.position_y = position_y;
                             })
+                        },
+                    ))
+                    .child(NumberInput::new(
+                        "position-x",
+                        "Horizontal (%)",
+                        current.position_x * 100.0,
+                        |percent, cx| {
+                            settings::update(cx, |settings| settings.position_x = percent / 100.0)
+                        },
+                    ))
+                    .child(NumberInput::new(
+                        "position-y",
+                        "Vertical (%)",
+                        current.position_y * 100.0,
+                        |percent, cx| {
+                            settings::update(cx, |settings| settings.position_y = percent / 100.0)
                         },
                     )),
             )
