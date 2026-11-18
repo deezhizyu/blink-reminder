@@ -21,6 +21,7 @@ pub struct Settings {
     pub display_seconds: f32,
     pub opacity: f32,
     pub animations_enabled: bool,
+    pub launch_at_login: bool,
     pub position_x: f32,
     pub position_y: f32,
 }
@@ -40,6 +41,7 @@ impl Default for Settings {
             display_seconds: 5.0,
             opacity: 0.25,
             animations_enabled: true,
+            launch_at_login: false,
             position_x: 0.5,
             position_y: 0.5,
         }
@@ -86,6 +88,22 @@ pub fn update(cx: &mut App, change: impl FnOnce(&mut Settings)) {
     }
     cx.set_global(updated);
     schedule_save(cx);
+}
+
+pub fn observe_field<Value: PartialEq + 'static>(
+    cx: &mut App,
+    select: impl Fn(&Settings) -> Value + 'static,
+    mut on_change: impl FnMut(&Value, &mut App) + 'static,
+) {
+    let mut current = select(cx.global::<Settings>());
+    cx.observe_global::<Settings>(move |cx| {
+        let changed = select(cx.global::<Settings>());
+        if changed != current {
+            current = changed;
+            on_change(&current, cx);
+        }
+    })
+    .detach();
 }
 
 pub fn save_on_quit(cx: &mut App) {

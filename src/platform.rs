@@ -1,26 +1,77 @@
-use std::ffi::c_void;
+use std::{env, ffi::c_void, os::windows::ffi::OsStrExt as _};
 
 use anyhow::{Result, anyhow};
 use gpui::Window;
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-use windows::Win32::{
-    Foundation::{COLORREF, HWND, LPARAM, POINT, RECT, TRUE},
-    Graphics::Dwm::{
-        DWMNCRENDERINGPOLICY, DWMNCRP_DISABLED, DWMWA_BORDER_COLOR, DWMWA_COLOR_NONE,
-        DWMWA_NCRENDERING_POLICY, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND,
-        DwmSetWindowAttribute,
+use windows::{
+    Win32::{
+        Foundation::{COLORREF, ERROR_FILE_NOT_FOUND, HWND, LPARAM, POINT, RECT, TRUE},
+        Graphics::Dwm::{
+            DWMNCRENDERINGPOLICY, DWMNCRP_DISABLED, DWMWA_BORDER_COLOR, DWMWA_COLOR_NONE,
+            DWMWA_NCRENDERING_POLICY, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND,
+            DwmSetWindowAttribute,
+        },
+        Graphics::Gdi::{
+            EnumDisplayMonitors, HDC, HMONITOR, MONITOR_DEFAULTTONEAREST, MonitorFromPoint,
+        },
+        System::Registry::{HKEY_CURRENT_USER, REG_SZ, RegDeleteKeyValueW, RegSetKeyValueW},
+        UI::WindowsAndMessaging::{
+            GWL_EXSTYLE, GetCursorPos, GetWindowLongPtrW, HWND_TOPMOST, LWA_ALPHA, SWP_NOACTIVATE,
+            SWP_NOMOVE, SWP_NOSIZE, SetLayeredWindowAttributes, SetWindowLongPtrW, SetWindowPos,
+            WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT,
+        },
     },
-    Graphics::Gdi::{
-        EnumDisplayMonitors, HDC, HMONITOR, MONITOR_DEFAULTTONEAREST, MonitorFromPoint,
-    },
-    UI::WindowsAndMessaging::{
-        GWL_EXSTYLE, GetCursorPos, GetWindowLongPtrW, HWND_TOPMOST, LWA_ALPHA, SWP_NOACTIVATE,
-        SWP_NOMOVE, SWP_NOSIZE, SetLayeredWindowAttributes, SetWindowLongPtrW, SetWindowPos,
-        WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT,
-    },
+    core::{PCWSTR, w},
 };
 
 const FULLY_OPAQUE_ALPHA: u8 = 255;
+const STARTUP_REGISTRY_KEY: PCWSTR = w!(r"Software\Microsoft\Windows\CurrentVersion\Run");
+const STARTUP_REGISTRY_VALUE: PCWSTR = w!("Blink Reminder");
+
+pub fn set_launch_at_login(enabled: bool) -> Result<()> {
+    if enabled {
+        register_launch_at_login()
+    } else {
+        unregister_launch_at_login()
+    }
+}
+
+fn register_launch_at_login() -> Result<()> {
+    let executable = env::current_exe()?;
+    let quote = "\"".encode_utf16();
+    let command: Vec<u16> = quote
+        .clone()
+        .chain(executable.as_os_str().encode_wide())
+        .chain(quote)
+        .chain([0])
+        .collect();
+    unsafe {
+        RegSetKeyValueW(
+            HKEY_CURRENT_USER,
+            STARTUP_REGISTRY_KEY,
+            STARTUP_REGISTRY_VALUE,
+            REG_SZ.0,
+            Some(command.as_ptr() as *const c_void),
+            size_of_val(command.as_slice()) as u32,
+        )
+        .ok()?;
+    }
+    Ok(())
+}
+
+fn unregister_launch_at_login() -> Result<()> {
+    let result = unsafe {
+        RegDeleteKeyValueW(
+            HKEY_CURRENT_USER,
+            STARTUP_REGISTRY_KEY,
+            STARTUP_REGISTRY_VALUE,
+        )
+    };
+    if result != ERROR_FILE_NOT_FOUND {
+        result.ok()?;
+    }
+    Ok(())
+}
 
 pub fn make_click_through(window: &Window) -> Result<()> {
     let window_handle = window_handle(window)?;

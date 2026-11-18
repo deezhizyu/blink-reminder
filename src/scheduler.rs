@@ -2,7 +2,10 @@ use std::time::Duration;
 
 use gpui::{App, Global, Task};
 
-use crate::{overlay, settings::Settings};
+use crate::{
+    overlay,
+    settings::{self, Settings},
+};
 
 struct Scheduler {
     _reminder_loop: Task<()>,
@@ -12,15 +15,11 @@ impl Global for Scheduler {}
 
 pub fn start(cx: &mut App) {
     restart(cx);
-    let mut interval_minutes = cx.global::<Settings>().interval_minutes;
-    cx.observe_global::<Settings>(move |cx| {
-        let changed_interval_minutes = cx.global::<Settings>().interval_minutes;
-        if changed_interval_minutes != interval_minutes {
-            interval_minutes = changed_interval_minutes;
-            restart(cx);
-        }
-    })
-    .detach();
+    settings::observe_field(
+        cx,
+        |settings| settings.interval_minutes,
+        |_, cx| restart(cx),
+    );
 }
 
 fn restart(cx: &mut App) {

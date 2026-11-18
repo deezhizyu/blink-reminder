@@ -44,6 +44,7 @@ Settings:
 | Display time (seconds) | 5 | 1–30 |
 | Overlay opacity | 0.25 | 0.1–1.0 |
 | Animations enabled | on | on/off |
+| Start with Windows | off | on/off |
 | Overlay position (normalized center on the screen) | 0.5, 0.5 | 0–1 |
 
 The position is edited in a light-gray box that has the aspect ratio of the screen, with a draggable overlay rectangle inside it.
@@ -61,7 +62,7 @@ See `PLAN.md` for the design and the build order.
 | `serde`, `toml` | Settings file |
 | `anyhow` | Error handling (`Result` with context) |
 | `futures` | Channel that carries tray menu events into the gpui executor |
-| `windows` | Win32 calls: click-through styles, display under the cursor |
+| `windows` | Win32 calls: click-through styles, display under the cursor, launch-at-login registry entry |
 | `raw-window-handle` | Window handle from the gpui window |
 | `winresource` (build) | Embeds the executable icon |
 

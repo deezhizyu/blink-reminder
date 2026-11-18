@@ -104,6 +104,12 @@ impl Render for SettingsWindow {
                     settings::update(cx, |settings| settings.animations_enabled = enabled)
                 },
             ))
+            .child(Toggle::new(
+                "launch-at-login",
+                "Start with Windows",
+                current.launch_at_login,
+                |enabled, cx| settings::update(cx, |settings| settings.launch_at_login = enabled),
+            ))
             .child(Button::new("test-reminder", "Test reminder", overlay::show));
 
         div()

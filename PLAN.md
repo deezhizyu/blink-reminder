@@ -56,7 +56,7 @@ src/platform.rs        Win32 only: make HWND click-through (WS_EX_LAYERED|WS_EX_
 - **Tray:** "Settings" opens or focuses the settings window. "Quit" calls `cx.quit()`. The app stays alive with no windows open.
 
 ## Skipped (not asked; can add later)
-Launch at login, single-instance guard, macOS/Linux support.
+Single-instance guard, macOS/Linux support.
 
 ## Risks to check first
 - Read gpui 0.2.2's Windows window code. Confirm that `PopUp` + `focus: false` does not activate the window and stays topmost, that the app does not quit when its last window closes, and that `Window: HasWindowHandle` holds.
@@ -78,3 +78,5 @@ Launch at login, single-instance guard, macOS/Linux support.
 - Dragging sliders and the position picker updates settings in memory at once and saves to disk 400 ms after the last change (and on quit), so the UI thread never waits on file writes. `pointer_surface` registers window-level mouse listeners while dragging, so the drag keeps tracking when the pointer leaves the control.
 - gpui creates pop-ups as plain overlapped windows, so DWM draws a border and a square shadow. `platform::make_click_through` also disables DWM non-client rendering and, on Windows 11, removes the border color and corner rounding.
 - The settings window shows editable Horizontal and Vertical percent fields under the position picker (`NumberInput`). Typed values apply live and are clamped by `Settings::clamped`.
+- **Start with Windows** (`launch_at_login`, off by default) writes the quoted executable path to `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` as `Blink Reminder`, or removes that value. It is applied on every start, so the entry follows a moved executable.
+- The settings window measures its content after layout and resizes itself to fit, because the position picker height follows the display aspect ratio. The picker fills the content width.

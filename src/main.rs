@@ -42,6 +42,7 @@ fn main() {
         .run(|cx: &mut App| {
             cx.set_global(Settings::load());
             settings::save_on_quit(cx);
+            sync_launch_at_login(cx);
             keep_application_alive(cx);
             if let Err(error) = tray::install(cx) {
                 report_error("failed to create the tray icon", &error);
@@ -50,6 +51,22 @@ fn main() {
             }
             scheduler::start(cx);
         });
+}
+
+// Applied on every start so the registry entry follows a moved executable.
+fn sync_launch_at_login(cx: &mut App) {
+    apply_launch_at_login(&cx.global::<Settings>().launch_at_login);
+    settings::observe_field(
+        cx,
+        |settings| settings.launch_at_login,
+        |enabled, _| apply_launch_at_login(enabled),
+    );
+}
+
+fn apply_launch_at_login(enabled: &bool) {
+    if let Err(error) = platform::set_launch_at_login(*enabled) {
+        report_error("failed to update launch at login", &error);
+    }
 }
 
 // gpui on Windows quits when its last window closes, so an invisible window keeps the tray app running.
