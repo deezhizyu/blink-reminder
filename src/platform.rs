@@ -5,6 +5,11 @@ use gpui::Window;
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use windows::Win32::{
     Foundation::{COLORREF, HWND, LPARAM, POINT, RECT, TRUE},
+    Graphics::Dwm::{
+        DWMNCRENDERINGPOLICY, DWMNCRP_DISABLED, DWMWA_BORDER_COLOR, DWMWA_COLOR_NONE,
+        DWMWA_NCRENDERING_POLICY, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_DONOTROUND,
+        DwmSetWindowAttribute,
+    },
     Graphics::Gdi::{
         EnumDisplayMonitors, HDC, HMONITOR, MONITOR_DEFAULTTONEAREST, MonitorFromPoint,
     },
@@ -28,6 +33,7 @@ pub fn make_click_through(window: &Window) -> Result<()> {
             current_styles | added_styles.0 as isize,
         );
         SetLayeredWindowAttributes(window_handle, COLORREF(0), FULLY_OPAQUE_ALPHA, LWA_ALPHA)?;
+        remove_frame_decorations(window_handle)?;
         SetWindowPos(
             window_handle,
             Some(HWND_TOPMOST),
@@ -37,6 +43,35 @@ pub fn make_click_through(window: &Window) -> Result<()> {
             0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
         )?;
+    }
+    Ok(())
+}
+
+// gpui creates pop-ups as plain overlapped windows, so DWM draws a border and a square shadow around them.
+unsafe fn remove_frame_decorations(window_handle: HWND) -> Result<()> {
+    let rendering_policy = DWMNCRP_DISABLED;
+    let border_color = DWMWA_COLOR_NONE;
+    let corner_preference = DWMWCP_DONOTROUND;
+    unsafe {
+        DwmSetWindowAttribute(
+            window_handle,
+            DWMWA_NCRENDERING_POLICY,
+            &rendering_policy as *const DWMNCRENDERINGPOLICY as *const c_void,
+            size_of::<DWMNCRENDERINGPOLICY>() as u32,
+        )?;
+        // Windows 11 only: Windows 10 rejects these attributes, and the policy above already removes its frame.
+        let _ = DwmSetWindowAttribute(
+            window_handle,
+            DWMWA_BORDER_COLOR,
+            &border_color as *const u32 as *const c_void,
+            size_of::<u32>() as u32,
+        );
+        let _ = DwmSetWindowAttribute(
+            window_handle,
+            DWMWA_WINDOW_CORNER_PREFERENCE,
+            &corner_preference as *const _ as *const c_void,
+            size_of_val(&corner_preference) as u32,
+        );
     }
     Ok(())
 }
