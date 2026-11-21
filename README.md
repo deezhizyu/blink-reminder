@@ -71,3 +71,7 @@ Blink Reminder is built on these crates:
 - [anyhow](https://crates.io/crates/anyhow): error handling
 - [futures](https://crates.io/crates/futures): async channels
 - [winresource](https://crates.io/crates/winresource): the executable icon
+
+## License
+
+Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
